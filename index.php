@@ -14,7 +14,7 @@
 
   <style>
     body {
-      margin: 5;
+      margin: 0;
       padding: 0;
       height: 100vh;
       background: url('./Media/mustrojo.jpg') no-repeat center center fixed;
