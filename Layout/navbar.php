@@ -31,9 +31,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="./perfil.php"><i class="fa-solid fa-user"></i> Perfil</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../HTML/productos.php"><i class="fa-solid fa-box"></i> Catalogo</a>
-                    </li>
+                   
                     <li class="nav-item">
                         <a class="nav-link" href="./premios.php"><i class="fa-solid fa-gift"></i> Canjear</a>
                     </li>

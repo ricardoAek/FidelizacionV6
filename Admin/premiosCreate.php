@@ -6,67 +6,108 @@
     <?php include '../Layout/documentCDN.html'; ?>
 </head>
 <body>
-    <div class="wrapper">
-        <?php include '../Layout/navbar.php'; ?>
+<div class="wrapper">
+    <?php include '../Layout/navbar.php'; ?>
 
-        <div class="container mt-4">
-            <h2>Crear Premio</h2><hr>
-            <form action="../PHP/premioCreate.php" method="POST" enctype="multipart/form-data">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Nombre del Premio</label>
-                        <input class="form-control" name="Premio_Nombre" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Puntos Necesarios</label>
-                        <input class="form-control" type="number" name="Premio_PuntosNecesarios" required>
-                    </div>
+    <div class="container mt-4">
+        <h2>Crear Premio</h2><hr>
+        <form id="formCrearPremio">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nombre del Premio</label>
+                    <input class="form-control" id="nombre" required>
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label class="form-label">Descripción</label>
-                        <textarea class="form-control" name="Premio_Descripcion" rows="3"></textarea>
-                    </div>
+                <div class="col-md-6">
+                    <label class="form-label">Puntos Necesarios</label>
+                    <input class="form-control" type="number" id="puntos" required>
                 </div>
+            </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Disponible</label>
-                        <select class="form-control" name="Premio_Disponible" required>
-                            <option value="1">Sí</option>
-                            <option value="0">No</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Imagen</label>
-                        <input class="form-control" type="file" name="Premio_Imagen" accept="image/*" onchange="mostrarVistaPrevia(event)">
-                        <img id="preview" src="#" alt="Vista previa" style="max-width: 200px; display: none; margin-top: 10px;">
-                    </div>
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-control" id="descripcion" rows="3"></textarea>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Disponible</label>
+                    <select class="form-control" id="disponible" required>
+                        <option value="1">Sí</option>
+                        <option value="0">No</option>
+                    </select>
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Imagen (opcional)</label>
+                    <input class="form-control" type="file" id="imagen" accept="image/*" onchange="mostrarVistaPrevia(event)">
+                    <img id="preview" src="#" style="max-width:200px; display:none; margin-top:10px;">
+                </div>
+            </div>
 
-                <button class="btn btn-secondary" type="submit">
-                    <i class="fas fa-save"></i> Guardar Premio
-                </button>
-            </form>
-        </div>
-
-        <br> <?php include '../Layout/footer.php'; ?>
+            <button class="btn btn-secondary" type="submit">
+                <i class="fas fa-save"></i> Guardar Premio
+            </button>
+        </form>
     </div>
 
-    <script>
-        function mostrarVistaPrevia(event) {
-            const input = event.target;
-            const preview = document.getElementById('preview');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
+    <br><?php include '../Layout/footer.php'; ?>
+</div>
+
+<script>
+    function mostrarVistaPrevia(event) {
+        const [file] = event.target.files;
+        const preview = document.getElementById('preview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
         }
-    </script>
+    }
+
+    document.getElementById('formCrearPremio').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const nombre = document.getElementById('nombre').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const puntos = parseInt(document.getElementById('puntos').value, 10);
+        const disponible = parseInt(document.getElementById('disponible').value, 10);
+        const inputFile = document.getElementById('imagen');
+        let imagenBase64 = null;
+
+        if (inputFile.files.length > 0) {
+            // Convertir la imagen a base64
+            imagenBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(inputFile.files[0]);
+            });
+        }
+
+        // Construir payload
+        const payload = { nombre, descripcion, puntos, disponible };
+        if (imagenBase64) payload.imagen = imagenBase64;
+
+        // Enviar a la API
+        try {
+            const res = await fetch('../API/Api_Premios.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(data.message);
+            if (data.status === 'success') {
+                window.location.href = './premiosView.php';
+            }
+        } catch (err) {
+            alert('Error al conectar con la API: ' + err);
+        }
+    });
+</script>
 </body>
 </html>

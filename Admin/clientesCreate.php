@@ -6,14 +6,13 @@
     <?php include '../Layout/documentCDN.html'; ?>
 </head>
 <body>
-    <!-- Inicio del Código -->
     <div class="wrapper">
-        <!-- BARRA DE NAVEGACIÓN -->
         <?php include '../Layout/navbar.php'; ?>
 
         <div class="container mt-4">
             <h2>Registrar Cliente</h2><hr>
-            <form action="../PHP/clienteCreate.php" method="POST">
+            <form id="clienteForm">
+                <!-- Campos igual que antes -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Nombre</label>
@@ -24,7 +23,6 @@
                         <input class="form-control" name="Usuario_Apellidos" required>
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Correo Electrónico</label>
@@ -35,7 +33,6 @@
                         <input class="form-control" type="text" name="Usuario_Telefono" pattern="\d{10}" maxlength="10" required>
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Contraseña</label>
@@ -51,14 +48,12 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Fecha de Nacimiento</label>
                         <input class="form-control" type="date" name="Usuario_FechaNacimiento">
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Ciudad</label>
@@ -69,7 +64,6 @@
                         <input class="form-control" name="Usuario_Estado">
                     </div>
                 </div>
-
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label">Dirección</label>
@@ -78,17 +72,45 @@
                 </div>
 
                 <button class="btn btn-secondary" type="submit">
-                    <i class="fas fa-save"></i> Guardar Cambios
+                    <i class="fas fa-save"></i> Guardar Cliente
                 </button>
             </form>
         </div>
 
-
-        <!-- PIE DE PÁGINA -->
         <br> <?php include '../Layout/footer.php'; ?>
     </div>
 
-    <!-- Fin del Código -->
-    <!-- Scritps Adicionales -->
+    <script>
+        document.getElementById('clienteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                nombre: formData.get('Usuario_Nombre'),
+                apellidos: formData.get('Usuario_Apellidos'),
+                email: formData.get('Usuario_Email'),
+                telefono: formData.get('Usuario_Telefono'),
+                contrasena: formData.get('Usuario_Contraseña'),
+                genero: formData.get('Usuario_Genero'),
+                fechaNacimiento: formData.get('Usuario_FechaNacimiento'),
+                ciudad: formData.get('Usuario_Ciudad'),
+                estado: formData.get('Usuario_Estado'),
+                direccion: formData.get('Usuario_Direccion')
+            };
+
+            fetch('http://localhost/Mustangv6/API/Api_Clientes.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                alert(res.message);
+                if (res.status === 'success') {
+                    window.location.href = '../Admin/clientesView.php';
+                }
+            })
+            .catch(err => alert('Error: ' + err));
+        });
+    </script>
 </body>
 </html>

@@ -20,7 +20,7 @@
                     <div class="col-md-6">
                         <div class="d-flex align-items-center">
                             <span class="me-2">Mostrando</span>
-                            <select name="items_per_page" class="form-select w-auto me-2">
+                            <select name="items_per_page" class="form-select w-auto me-2" onchange="this.form.submit()">
                                 <option value="10" <?php echo isset($_GET['items_per_page']) && $_GET['items_per_page'] == 10 ? 'selected' : ''; ?>>10</option>
                                 <option value="25" <?php echo isset($_GET['items_per_page']) && $_GET['items_per_page'] == 25 ? 'selected' : ''; ?>>25</option>
                                 <option value="50" <?php echo isset($_GET['items_per_page']) && $_GET['items_per_page'] == 50 ? 'selected' : ''; ?>>50</option>
@@ -36,24 +36,34 @@
             </form>
 
             <?php
-                include '../PHP/conexion_BD.php';
-
+                // Configuración de paginación y búsqueda
                 $items_per_page = isset($_GET['items_per_page']) ? (int)$_GET['items_per_page'] : 10;
-                $search = isset($_GET['search']) ? mysqli_real_escape_string($conexion, $_GET['search']) : '';
-
-                $query_count = "SELECT COUNT(*) FROM Beneficios WHERE Empresa_Nombre LIKE '%$search%'";
-                $result_count = mysqli_query($conexion, $query_count);
-                $total_items = mysqli_fetch_row($result_count)[0];
-                $total_pages = ceil($total_items / $items_per_page);
-
                 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-                $offset = ($current_page - 1) * $items_per_page;
+                $search = isset($_GET['search']) ? $_GET['search'] : '';
 
-                $query = "SELECT BeneficioID, Empresa_Nombre, Beneficio_Descripcion, Beneficio_Activo 
-                          FROM Beneficios 
-                          WHERE Empresa_Nombre LIKE '%$search%' 
-                          LIMIT $items_per_page OFFSET $offset";
-                $result = mysqli_query($conexion, $query);
+                // URL de la API
+                $api_url = "http://localhost/Mustangv6/API/Api_Beneficios.php"; // Cambia si tu API está en otro dominio
+
+                // Obtener datos JSON
+                $json_data = file_get_contents($api_url);
+                $beneficios = json_decode($json_data, true);
+
+                if (!is_array($beneficios)) {
+                    $beneficios = [];
+                }
+
+                // Filtrar búsqueda
+                if (!empty($search)) {
+                    $beneficios = array_filter($beneficios, function($b) use ($search) {
+                        return stripos($b['empresa'], $search) !== false;
+                    });
+                }
+
+                // Paginación manual
+                $total_items = count($beneficios);
+                $total_pages = ceil($total_items / $items_per_page);
+                $offset = ($current_page - 1) * $items_per_page;
+                $beneficios = array_slice($beneficios, $offset, $items_per_page);
             ?>
 
             <table class="table table-bordered table-striped">
@@ -67,22 +77,28 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                    <?php if (!empty($beneficios)) : ?>
+                        <?php foreach ($beneficios as $b) : ?>
+                            <tr>
+                                <td class="text-center"><?php echo $b['id']; ?></td>
+                                <td><?php echo htmlspecialchars($b['empresa']); ?></td>
+                                <td><?php echo htmlspecialchars($b['descripcion']); ?></td>
+                                <td class="text-center"><?php echo $b['activo']; ?></td>
+                                <td class="text-center">
+                                    <a href="./beneficiosEdit.php?id=<?php echo $b['id']; ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="./beneficiosDelete.php?id=<?php echo $b['id']; ?>" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else : ?>
                         <tr>
-                            <td class="text-center"><?php echo $row['BeneficioID']; ?></td>
-                            <td><?php echo $row['Empresa_Nombre']; ?></td>
-                            <td><?php echo $row['Beneficio_Descripcion']; ?></td>
-                            <td class="text-center"><?php echo $row['Beneficio_Activo'] ? 'Sí' : 'No'; ?></td>
-                            <td class="text-center">
-                                <a href="./beneficiosEdit.php?id=<?php echo $row['BeneficioID']; ?>" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="./beneficiosDelete.php?id=<?php echo $row['BeneficioID']; ?>" class="btn btn-sm btn-danger">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
+                            <td colspan="5" class="text-center">No se encontraron beneficios.</td>
                         </tr>
-                    <?php } ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
 
@@ -94,10 +110,10 @@
                 <div>
                     <ul class="pagination">
                         <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo $search; ?>&items_per_page=<?php echo $items_per_page; ?>">Anterior</a>
+                            <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>&items_per_page=<?php echo $items_per_page; ?>">Anterior</a>
                         </li>
                         <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo $search; ?>&items_per_page=<?php echo $items_per_page; ?>">Siguiente</a>
+                            <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>&items_per_page=<?php echo $items_per_page; ?>">Siguiente</a>
                         </li>
                     </ul>
                 </div>

@@ -11,7 +11,7 @@
 
         <div class="container mt-4">
             <h2>Crear Beneficio</h2><hr>
-            <form action="../PHP/beneficioCreate.php" method="POST">
+            <form id="formCrear">
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Nombre de la Empresa</label>
@@ -41,5 +41,29 @@
 
         <br> <?php include '../Layout/footer.php'; ?>
     </div>
+
+    <script>
+        const form = document.getElementById('formCrear');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            fetch('../API/api_beneficios.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    window.location.href = 'beneficiosView.php';
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        });
+    </script>
 </body>
 </html>

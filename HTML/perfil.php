@@ -16,7 +16,7 @@ if ($resultUsuario->num_rows > 0) {
     echo "<script>alert('Usuario no encontrado'); window.location.href = 'logout.php';</script>";
     exit;
 }
-?>?>
+?>
  
 <!DOCTYPE html>
 <html lang="es">

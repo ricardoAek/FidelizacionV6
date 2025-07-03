@@ -35,23 +35,29 @@
         </form>
 
         <?php
-            include '../PHP/conexion_BD.php';
+            // Cargar datos desde API
+            $api_url = "http://localhost/Mustangv6/API/Api_Premios.php";
+            $json = file_get_contents($api_url);
+            $premios = json_decode($json, true);
 
+            // Filtros locales (en PHP)
             $items_per_page = $_GET['items_per_page'] ?? 10;
-            $search = mysqli_real_escape_string($conexion, $_GET['search'] ?? '');
+            $search = $_GET['search'] ?? '';
 
-            $query_count = "SELECT COUNT(*) FROM Premios WHERE Premio_Nombre LIKE '%$search%'";
-            $result_count = mysqli_query($conexion, $query_count);
-            $total_items = mysqli_fetch_row($result_count)[0];
+            // Filtrar por nombre
+            if (!empty($search)) {
+                $premios = array_filter($premios, function($premio) use ($search) {
+                    return stripos($premio['Premio_Nombre'], $search) !== false;
+                });
+            }
+
+            $total_items = count($premios);
             $total_pages = ceil($total_items / $items_per_page);
             $current_page = $_GET['page'] ?? 1;
             $offset = ($current_page - 1) * $items_per_page;
 
-            $query = "SELECT PremioID, Premio_Nombre, Premio_Descripcion, Premio_PuntosNecesarios, Premio_Disponible, Premio_Imagen
-                      FROM Premios 
-                      WHERE Premio_Nombre LIKE '%$search%' 
-                      LIMIT $items_per_page OFFSET $offset";
-            $result = mysqli_query($conexion, $query);
+            // Cortar arreglo
+            $premios_pagina = array_slice($premios, $offset, $items_per_page);
         ?>
 
         <table class="table table-bordered table-striped">
@@ -67,7 +73,7 @@
                 </tr>
             </thead>
             <tbody>
-                <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                <?php foreach ($premios_pagina as $row) { ?>
                     <tr>
                         <td class="text-center"><?= $row['PremioID']; ?></td>
                         <td><?= htmlspecialchars($row['Premio_Nombre']); ?></td>
@@ -75,14 +81,10 @@
                         <td class="text-center"><?= $row['Premio_PuntosNecesarios']; ?></td>
                         <td class="text-center"><?= $row['Premio_Disponible'] ? 'Sí' : 'No'; ?></td>
                         <td class="text-center">
-                            <?php if (!empty($row['Premio_Imagen'])): ?>
-                                
-                                <img src="../Media/Productos/<?= htmlspecialchars($row['Premio_Imagen']) ?>"
+                            <?php if (!empty($row['Premio_Imagen_URL'])): ?>
+                                <img src="<?= htmlspecialchars($row['Premio_Imagen_URL']); ?>"
                                      alt="Imagen Premio"
-                                     style="max-width: 60px; cursor:pointer;"
-                                     data-bs-toggle="modal"
-                                     data-bs-target="#modalImagen"
-                                     data-img="/Media/Productos/<?= htmlspecialchars($row['Premio_Imagen']); ?>">
+                                     style="max-width: 60px;">
                             <?php else: ?>
                                 <span class="text-muted">Sin imagen</span>
                             <?php endif; ?>
@@ -101,10 +103,10 @@
             <p>Mostrando página <?= $current_page; ?> de <?= $total_pages; ?></p>
             <ul class="pagination">
                 <li class="page-item <?= $current_page <= 1 ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?= $current_page - 1; ?>&search=<?= $search; ?>&items_per_page=<?= $items_per_page; ?>">Anterior</a>
+                    <a class="page-link" href="?page=<?= $current_page - 1; ?>&search=<?= urlencode($search); ?>&items_per_page=<?= $items_per_page; ?>">Anterior</a>
                 </li>
                 <li class="page-item <?= $current_page >= $total_pages ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?= $current_page + 1; ?>&search=<?= $search; ?>&items_per_page=<?= $items_per_page; ?>">Siguiente</a>
+                    <a class="page-link" href="?page=<?= $current_page + 1; ?>&search=<?= urlencode($search); ?>&items_per_page=<?= $items_per_page; ?>">Siguiente</a>
                 </li>
             </ul>
         </div>
@@ -112,7 +114,5 @@
 
     <?php include '../Layout/footer.php'; ?>
 </div>
-
-<
 </body>
 </html>
